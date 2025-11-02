@@ -1,36 +1,26 @@
 <?php
 session_start();
 
-// Proteksi: hanya admin yang boleh akses
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    header("Location: admin_login.php");
+// middleware protection: hanya admin yang boleh akses
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin_login.php');
     exit;
 }
-
-// Ambil nama admin
-$admin_name = $_SESSION['user_name'] ?? 'Admin';
 ?>
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard Admin</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
-        .navbar { background: #c62828; color: white; padding: 15px 20px; }
-        .container { padding: 20px; }
-        h1 { margin-top: 0; }
-    </style>
+<meta charset="utf-8">
+<title>Dashboard Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
 <body>
-    <div class="navbar">
-        <h2>🛡️ Dashboard Admin</h2>
-    </div>
-    <div class="container">
-        <h1>Halo, <?= htmlspecialchars($admin_name) ?>!</h1>
-        <p>Selamat datang di dashboard admin. Ini halaman uji coba.</p>
-        <p><a href="admin_logout.php" style="color: #c62828;">Logout</a></p>
-    </div>
+    <h2>Halo, <?= htmlspecialchars($_SESSION['admin_name']) ?> (Admin)</h2>
+    <p>Login berhasil ✅</p>
+
+    <ul>
+        <li><a href="admin_login.php">Halaman Login</a></li>
+        <li><a href="logout_admin.php">Logout</a></li>
+    </ul>
 </body>
 </html>

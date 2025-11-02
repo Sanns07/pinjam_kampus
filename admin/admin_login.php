@@ -1,77 +1,65 @@
 <?php
-// Cek jika sudah login
-if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'admin') {
-    header("Location: admin_dashboard.php");
-    exit;
-}
+session_start();
+require '../db.php'; // pastikan path ini benar
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nim_nip = trim($_POST['nim_nip']);
-    $password = trim($_POST['password']);
+    $nim_nip = isset($_POST['nim_nip']) ? trim($_POST['nim_nip']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
 
-    if (empty($nim_nip) || empty($password)) {
-        $error = "NIM/NIP dan password wajib diisi.";
+    if ($nim_nip === '' || $password === '') {
+        $error = 'NIM/NIP dan password wajib diisi.';
     } else {
-        require_once '../config.php';
+        // Ambil user yang role = admin
+        $stmt = $pdo->prepare("SELECT id, name, nim_nip, password, role FROM users WHERE nim_nip = ? AND role = 'admin' LIMIT 1");
+        $stmt->execute([$nim_nip]);
+        $user = $stmt->fetch();
 
-        $stmt = mysqli_prepare($conn, 
-            "SELECT id, name FROM users WHERE nim_nip = ? AND password = ? AND role = 'admin'"
-        );
-        mysqli_stmt_bind_param($stmt, "ss", $nim_nip, $password);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        if ($admin = mysqli_fetch_assoc($result)) {
-            // Simpan session
-            $_SESSION['user_id'] = $admin['id'];
-            $_SESSION['user_name'] = $admin['name'];
-            $_SESSION['user_role'] = 'admin';
-            header("Location: admin_dashboard.php");
+        // Karena kamu minta tanpa hash -> bandingkan langsung
+        if ($user && $password === $user['password']) {
+            // login sukses
+            $_SESSION['admin_id'] = $user['id'];
+            $_SESSION['admin_name'] = $user['name'];
+            header('Location: admin_dashboard.php');
             exit;
         } else {
-            $error = "NIM/NIP atau password salah.";
+            $error = 'NIM/NIP atau password salah, atau bukan admin.';
         }
-
-        mysqli_close($conn);
     }
 }
 ?>
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title>Login Admin</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 350px; }
-        .box h2 { text-align: center; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 10px; background: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .error { color: red; text-align: center; margin-bottom: 15px; }
-    </style>
+<meta charset="utf-8">
+<title>Login Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font-family:Arial;background:#f4f4f4;display:flex;align-items:center;justify-content:center;height:100vh}
+.card{background:#fff;padding:20px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.1);width:320px}
+input{width:100%;padding:8px;margin:6px 0;border:1px solid #ccc;border-radius:4px}
+button{width:100%;padding:10px;border:0;background:#2b8aef;color:#fff;border-radius:4px;cursor:pointer}
+.err{color:#a33;margin-bottom:8px}
+</style>
 </head>
 <body>
-    <div class="box">
-        <h2>🔐 Login Admin</h2>
-        <?php if ($error): ?>
-            <div class="error"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
-        <form method="POST">
-            <div class="form-group">
-                <label>NIM / NIP</label>
-                <input type="text" name="nim_nip" required>
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" required>
-            </div>
-            <button type="submit">Login</button>
-        </form>
-    </div>
+<div class="card">
+    <h3>Login Admin (plain-text password)</h3>
+
+    <?php if ($error): ?>
+        <div class="err"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <form method="post" action="">
+        <label for="nim_nip">NIM / NIP</label>
+        <input id="nim_nip" name="nim_nip" type="text" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+
+        <button type="submit">Masuk</button>
+    </form>
+</div>
 </body>
 </html>
